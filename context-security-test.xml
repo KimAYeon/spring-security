@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:security="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:aop="http://www.springframework.org/schema/aop"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	 		 http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.2.xsd
+			 http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+<!--    <aop:aspectj-autoproxy proxy-target-class="true" />-->
+
+    <security:http pattern="/resources/**" security="none" />
+    <security:http pattern="/webjars/**" security="none" />
+    <security:http pattern="/error/**" security="none" />
+    <security:http pattern="/favicon.ico/**" security="none" />
+
+    <security:http use-expressions="true" authentication-manager-ref="authenticationManager" entry-point-ref="authenticationEntryPoint">
+
+        <security:intercept-url pattern="/main" access="isAuthenticated()" />
+        <security:intercept-url pattern="/sample/**" access="permitAll()" />
+        <security:intercept-url pattern="/**" access="isAuthenticated()" />
+
+        <security:form-login login-page="/sample/sampleLogin"
+                             login-processing-url="/login"
+                             authentication-success-handler-ref="loginSuccessHandler" />
+        <security:logout logout-url="/logout" success-handler-ref="logoutSuccessHandler" />
+
+        <security:csrf disabled="true" />
+
+        <security:access-denied-handler ref="accessDeniedHandler" />
+
+        <security:custom-filter after="FILTER_SECURITY_INTERCEPTOR" ref="filterSecurityInterceptor" />
+    </security:http> <!-- secured method -->
+
+
+
+
+    <!--    <security:global-method-security secured-annotations="enabled" /> &lt;!&ndash; provider &ndash;&gt;-->
+
+    <security:authentication-manager id="authenticationManager">
+        <security:authentication-provider ref="authenticationProvider" />
+    </security:authentication-manager>
+
+    <beans:bean id="loginSuccessHandler" class="net.cj.ethics.admin.common.security.LoginSuccessHandler">
+    </beans:bean>
+
+    <beans:bean id="logoutSuccessHandler" class="net.cj.ethics.admin.common.security.CustomLogoutSuccessHandler">
+    </beans:bean>
+
+    <beans:bean id="accessDeniedHandler" class="net.cj.ethics.admin.common.security.CustomAccessDeniedHandler">
+    </beans:bean>
+
+    <beans:bean id="authenticationEntryPoint" class="net.cj.ethics.admin.common.security.CustomAuthenticationEntryPoint">
+    </beans:bean>
+
+    <beans:bean id="userDetailsService" class="net.cj.ethics.admin.common.security.UserDetailsServiceImpl">
+        <beans:property name="cjwIdDecryptKey" value="#{config['cjw.sso.decrypt.key']}" />
+    </beans:bean>
+    <!--	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />-->
+
+    <beans:bean id="authenticationProvider" class="net.cj.ethics.admin.common.security.CustomAuthenticationProvider">
+        <beans:property name="userDetailsService" ref="userDetailsService" />
+    </beans:bean>
+
+    <beans:bean id="filterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+        <beans:property name="securityMetadataSource" ref="filterInvocationSecurityMetadataSource" />
+        <beans:property name="authenticationManager" ref="authenticationManager" />
+        <beans:property name="accessDecisionManager" ref="affirmativeBased" />
+    </beans:bean>
+
+    <beans:bean id="affirmativeBased" class="org.springframework.security.access.vote.AffirmativeBased">
+        <beans:constructor-arg>
+            <beans:list>
+                <beans:bean class="net.cj.ethics.admin.common.security.CustomAccessDecisionVoter" />
+            </beans:list>
+        </beans:constructor-arg>
+    </beans:bean>
+
+    <beans:bean id="filterInvocationSecurityMetadataSource" class="net.cj.ethics.admin.common.security.CustomFilterSecurityMetadataSource">
+    </beans:bean>
+
+
+
+
+
+
+
+
+
+
+
+
+    <!--	<http pattern="/ni/traffic/*.do" security="none" />-->
+    <!--	<http pattern="/js/**" security="none" />-->
+    <!--	<http pattern="/include/tool_ip.do" security="none" />-->
+    <!--	<http pattern="/config/getDataSyncList.do" security="none" />-->
+    <!--	<http pattern="/config/capitalSync.do" security="none" />-->
+    <!--	<http pattern="/config/employeeSync.do" security="none" />-->
+
+    <!--	<security:http auto-config="true" use-expressions="true">-->
+    <!--		// expressions을 추가해야 hasRole,permitAll등의 다양한 옵션들을 쓸수 있음-->
+    <!--		<security:form-login login-page="/loginForm"/> //로그인 url-->
+    <!--		&lt;!&ndash; <security:form-login login-page="/loginForm" authentication-failure-url="성공유알엘 "/> &ndash;&gt;-->
+    <!--		<security:intercept-url pattern="/admin/**" access="hasAuthority('ROLE_ADMIN')"/>// 관리자만 들어갈수있음-->
+    <!--		<security:intercept-url pattern="/manager/**" access="hasRole('ROLE_MANAGER')"/> //위랑 같은뜻 매니저만 들어갈수있음-->
+    <!--		<security:intercept-url pattern="/member/**" access="isAuthenticated()"/> //인증한사람만 들어갈수있음-->
+    <!--		<security:intercept-url pattern="/user" access="hasRole('ROLE_USER')" />-->
+    <!--		<security:intercept-url pattern="/welcome" access="hasRole('ROLE_ADMIN')" />-->
+    <!--		<security:intercept-url pattern="/**" access="permitAll" />-->
+    <!--	</security:http>-->
+
+
+
+
+    <!--	<http auto-config="true" disable-url-rewriting="true">-->
+    <!--		<intercept-url pattern="/*" access="ROLE_USER,ROLE_ADMIN" />-->
+
+
+    <!--		<form-login-->
+    <!--				login-page="/login/form"-->
+    <!--				login-processing-url="/j_spring_security_check"-->
+    <!--				default-target-url="/cert/main.do"-->
+    <!--				authentication-success-handler-ref="loginSuccessHandler"-->
+    <!--				authentication-failure-url="/login/fail"-->
+    <!--				authentication-failure-handler-ref="loginFailHandler"-->
+    <!--				always-use-default-target="true"-->
+    <!--				username-parameter="j_username" password-parameter="j_password"/>-->
+    <!--		<logout-->
+    <!--				invalidate-session="true"-->
+    <!--				success-handler-ref="logoutSuccessHandler"-->
+    <!--				logout-url="/logout" />-->
+    <!--	</http>-->
+
+
+    <!--	<beans:bean id="loginService" class="com.igloosec.spidertm.login.service.LoginService" />-->
+
+    <!--	<authentication-manager alias="authenticationManager" erase-credentials="false">-->
+    <!--		<authentication-provider user-service-ref="loginService">-->
+    <!--			<password-encoder ref="passwordEncoder" />-->
+    <!--		</authentication-provider>-->
+    <!--	</authentication-manager>-->
+
+    <!--	<beans:bean id="loginSuccessHandler" class="kr.co.cj.olivenetworks.admin.common.login.service.LoginSuccessHandler" />-->
+    <!--	<beans:bean id="loginFailHandler" class="kr.co.cj.olivenetworks.admin.common.login.service.LoginFailureHandler" />-->
+    <!--	<beans:bean id="logoutSuccessHandler" class="kr.co.cj.olivenetworks.admin.common.login.service.LogoutSuccessHandler" />-->
+
+    <!--	<beans:bean id="passwordEncoder" class="com.igloosec.spidertm.login.service.SimplePasswordEncoder" />-->
+
+    <!--	<aop:aspectj-autoproxy proxy-target-class="true" />-->
+</beans:beans>
